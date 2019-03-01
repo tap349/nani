@@ -1,7 +1,7 @@
 defmodule Nani.JSON do
   @default_headers [
-    {"accept", "application/json; charset=UTF-8"},
-    {"content-type", "application/json"}
+    {"Accept", "application/json; charset=UTF-8"},
+    {"Content-Type", "application/json"}
   ]
 
   @spec get(String.t(), map, keyword) :: Nani.Base.result_t()
