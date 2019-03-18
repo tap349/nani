@@ -4,7 +4,7 @@ defmodule Nani.JSON do
     {"Content-Type", "application/json"}
   ]
 
-  @type result_t :: {:ok, map} | {:error, String.t()}
+  @type result_t :: {:ok, list | map} | {:error, String.t()}
 
   @spec get(String.t(), map, keyword) :: result_t()
   def get(url, query_params, opts \\ []) do
