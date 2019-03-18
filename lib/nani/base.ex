@@ -2,13 +2,13 @@ defmodule Nani.Base do
   alias HTTPoison.{Response, Error}
   require Logger
 
-  @type result_t :: {:ok, String.t()} | {:error, String.t()}
-  @type raw_result_t :: {:ok, Response.t()} | {:error, Error.t()}
-
   @default_headers []
   # timeout is 8000ms by default
   # recv_timeout is 5000ms by default
   @default_options [timeout: 32_000, recv_timeout: 60_000]
+
+  @type result_t :: {:ok, String.t()} | {:error, String.t()}
+  @type raw_result_t :: {:ok, Response.t()} | {:error, Error.t()}
 
   @spec get(String.t(), map, keyword) :: result_t
   def get(url, query_params, opts \\ []) do

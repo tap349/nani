@@ -4,7 +4,9 @@ defmodule Nani.JSON do
     {"Content-Type", "application/json"}
   ]
 
-  @spec get(String.t(), map, keyword) :: Nani.Base.result_t()
+  @type result_t :: {:ok, map} | {:error, String.t()}
+
+  @spec get(String.t(), map, keyword) :: result_t()
   def get(url, query_params, opts \\ []) do
     opts = put_in(opts[:headers], headers(opts))
 
@@ -13,7 +15,7 @@ defmodule Nani.JSON do
     |> parse_response()
   end
 
-  @spec post(String.t(), map, map, keyword) :: Nani.Base.result_t()
+  @spec post(String.t(), map, map, keyword) :: result_t()
   def post(url, query_params, post_params, opts \\ []) do
     opts = put_in(opts[:headers], headers(opts))
 
