@@ -13,10 +13,7 @@ defmodule Nani.Base do
   @spec get(String.t(), map, keyword) :: result_t
   def get(url, query_params, opts \\ []) do
     url
-    |> url_with_query(query_params)
-    |> URI.encode()
-    |> HTTPoison.get(headers(opts), options(opts))
-    |> log_response()
+    |> get_raw(query_params, opts)
     |> handle_response()
   end
 
@@ -26,10 +23,18 @@ defmodule Nani.Base do
     |> url_with_query(query_params)
     |> URI.encode()
     |> HTTPoison.get(headers(opts), options(opts))
+    |> log_response()
   end
 
   @spec post(String.t(), map, map, keyword) :: result_t
   def post(url, query_params, post_params, opts \\ []) do
+    url
+    |> post_raw(query_params, post_params, opts)
+    |> handle_response()
+  end
+
+  @spec post_raw(String.t(), map, map, keyword) :: raw_result_t
+  def post_raw(url, query_params, post_params, opts \\ []) do
     post_params = Jason.encode!(post_params)
 
     url
@@ -37,7 +42,6 @@ defmodule Nani.Base do
     |> URI.encode()
     |> HTTPoison.post(post_params, headers(opts), options(opts))
     |> log_response()
-    |> handle_response()
   end
 
   defp url_with_query(url, query_params) when query_params == %{} do
