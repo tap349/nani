@@ -1,3 +1,7 @@
+## v0.1.4
+
+- add Nani.Result.wrap/1
+
 ## v0.1.3
 
 - add add Nani.Base.post_raw/4

@@ -6,6 +6,10 @@ defmodule Nani.Result do
 
   @type t :: %__MODULE__{cursor: String.t() | nil, data: any}
 
+  def wrap(data) do
+    {:ok, %__MODULE__{data: data}}
+  end
+
   def unwrap({:ok, %__MODULE__{data: data}}) do
     {:ok, data}
   end
