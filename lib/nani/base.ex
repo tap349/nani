@@ -1,46 +1,55 @@
 defmodule Nani.Base do
+  use Hayase
   alias HTTPoison.{Response, Error}
   require Logger
+
+  @success_status_codes [200, 201]
 
   @default_headers []
   # timeout is 8000ms by default
   # recv_timeout is 5000ms by default
   @default_options [timeout: 32_000, recv_timeout: 60_000]
 
-  @type result_t :: {:ok, String.t()} | {:error, String.t()}
+  @type result_t :: {:ok, String.t() | list | map} | {:error, String.t()}
   @type raw_result_t :: {:ok, Response.t()} | {:error, Error.t()}
 
   @spec get(String.t(), map, keyword) :: result_t
   def get(url, query_params, opts \\ []) do
     url
     |> get_raw(query_params, opts)
-    |> handle_response()
-  end
-
-  @spec get_raw(String.t(), map, keyword) :: raw_result_t
-  def get_raw(url, query_params, opts \\ []) do
-    url
-    |> url_with_query(query_params)
-    |> URI.encode()
-    |> HTTPoison.get(headers(opts), options(opts))
-    |> log_response()
+    |> process_response()
   end
 
   @spec post(String.t(), map, map, keyword) :: result_t
   def post(url, query_params, post_params, opts \\ []) do
     url
     |> post_raw(query_params, post_params, opts)
-    |> handle_response()
+    |> process_response()
   end
 
-  @spec post_raw(String.t(), map, map, keyword) :: raw_result_t
-  def post_raw(url, query_params, post_params, opts \\ []) do
-    post_params = Jason.encode!(post_params)
+  @spec get_raw(String.t(), map, keyword) :: raw_result_t
+  def get_raw(url, query_params, opts \\ []) do
+    headers = request_headers(opts)
+    options = request_options(opts)
 
     url
     |> url_with_query(query_params)
     |> URI.encode()
-    |> HTTPoison.post(post_params, headers(opts), options(opts))
+    |> HTTPoison.get(headers, options)
+    |> log_response()
+  end
+
+  # binary body is not supported - pass POST params as a map
+  @spec post_raw(String.t(), map, map, keyword) :: raw_result_t
+  def post_raw(url, query_params, %{} = post_params, opts \\ []) do
+    headers = request_headers(opts)
+    options = request_options(opts)
+    body = request_body(post_params, headers)
+
+    url
+    |> url_with_query(query_params)
+    |> URI.encode()
+    |> HTTPoison.post(body, headers, options)
     |> log_response()
   end
 
@@ -61,65 +70,126 @@ defmodule Nani.Base do
     "#{url}?#{query_string}"
   end
 
-  defp headers(opts) do
+  defp request_body(post_params, headers) do
+    content_type = Map.new(headers)["Content-Type"]
+
+    case content_type do
+      nil ->
+        raise "Request Content-Type not set"
+
+      "application/json" <> _ ->
+        Jason.encode!(post_params)
+
+      "application/x-www-form-urlencoded" <> _ ->
+        {:form, Keyword.new(post_params)}
+
+      _ ->
+        raise "Request Content-Type not supported: #{content_type}"
+    end
+  end
+
+  defp request_headers(opts) do
     headers = Keyword.get(opts, :headers, [])
     @default_headers ++ headers
   end
 
-  defp options(opts) do
+  defp request_options(opts) do
     options = Keyword.get(opts, :options, [])
     Keyword.merge(@default_options, options)
+  end
+
+  defp process_response(result) do
+    result
+    |> fmap(&gunzip_response_body/1)
+    |> fmap(&parse_response_body/1)
+    |> bind(&extract_response_body/1)
+    |> process_error()
   end
 
   # -----------------------------------------------------------------
   # log_response
   # -----------------------------------------------------------------
 
-  defp log_response({:ok, %Response{status_code: status_code}} = response)
-       when status_code in [200, 201] do
-    Logger.debug("API RESPONSE:\n" <> inspect(response))
-    response
+  defp log_response({:ok, %Response{status_code: status_code}} = result)
+       when status_code in @success_status_codes do
+    {_, response} = result
+    Logger.debug("HTTP RESPONSE: #{inspect(response)}")
+    result
   end
 
-  defp log_response({:ok, _} = response) do
-    Logger.error("API RESPONSE:\n" <> inspect(response))
-    response
-  end
-
-  defp log_response({:error, _} = response) do
-    Logger.error("API RESPONSE:\n" <> inspect(response))
-    response
+  defp log_response(result) do
+    {_, response} = result
+    Logger.error("HTTP RESPONSE: #{inspect(response)}")
+    result
   end
 
   # -----------------------------------------------------------------
-  # handle response
+  # gunzip_response_body
+  #
+  # https://github.com/edgurgel/httpoison/issues/81
   #
   # gzipped body should be decoded transparently by HTTPoison if
-  # "Content-Encoding: gzip" header is set but it can be missing
-  # so check if URL leads to gzipped file manually
+  # "Content-Encoding: gzip" or "Content-Encoding: x-gzip" header
+  # is set but this feature is not implemented yet and this header
+  # may be missing so check if URL leads to gzipped file manually
   # -----------------------------------------------------------------
 
-  defp handle_response({:ok, %Response{status_code: status_code} = response})
-       when status_code in [200, 201] do
+  defp gunzip_response_body(%Response{status_code: 200} = response) do
     %{body: body, request: %{url: url}} = response
 
     case String.ends_with?(url, "gz") do
-      true -> {:ok, :zlib.gunzip(body)}
-      false -> {:ok, body}
+      true -> %{response | body: :zlib.gunzip(body)}
+      false -> response
     end
   end
 
-  defp handle_response({:ok, %Response{body: body} = response})
+  # -----------------------------------------------------------------
+  # parse_response_body
+  # -----------------------------------------------------------------
+
+  defp parse_response_body(response) do
+    %{body: body, headers: headers} = response
+
+    content_type =
+      headers
+      |> Map.new()
+      |> Map.fetch!("Content-Type")
+
+    case content_type do
+      "application/json" <> _ ->
+        %{response | body: Jason.decode!(body)}
+
+      _ ->
+        response
+    end
+  end
+
+  # -----------------------------------------------------------------
+  # extract_response_body
+  # -----------------------------------------------------------------
+
+  defp extract_response_body(%Response{body: body, status_code: status_code})
+       when status_code in @success_status_codes do
+    {:ok, body}
+  end
+
+  defp extract_response_body(%Response{body: body, status_code: status_code})
        when body in ["", " "] do
-    {:error, "#{response.status_code}"}
+    {:error, "#{status_code}"}
   end
 
-  defp handle_response({:ok, %Response{} = response}) do
-    {:error, "#{response.status_code}: #{response.body}"}
+  defp extract_response_body(%Response{body: body, status_code: status_code}) do
+    {:error, "#{status_code}: #{body}"}
   end
 
-  # reason can be atom or tuple - convert it to string
-  defp handle_response({:error, %Error{reason: reason}}) do
-    {:error, inspect(reason)}
+  # -----------------------------------------------------------------
+  # process_error
+  # -----------------------------------------------------------------
+
+  # error can be string, atom, tuple or HTTPoison.Error struct
+  defp process_error({:error, error}) do
+    {:error, inspect(error)}
   end
+
+  defp process_error(result), do: result
 end

@@ -1,38 +1,23 @@
 defmodule Nani.JSON do
   @default_headers [
-    {"Accept", "application/json; charset=UTF-8"},
-    {"Content-Type", "application/json"}
+    {"Accept", "application/json; charset=utf-8"},
+    {"Content-Type", "application/json; charset=utf-8"}
   ]
 
   @type result_t :: {:ok, list | map} | {:error, String.t()}
 
   @spec get(String.t(), map, keyword) :: result_t()
   def get(url, query_params, opts \\ []) do
-    opts = put_in(opts[:headers], headers(opts))
-
-    url
-    |> Nani.Base.get(query_params, opts)
-    |> parse_response()
+    Nani.Base.get(url, query_params, json_opts(opts))
   end
 
   @spec post(String.t(), map, map, keyword) :: result_t()
   def post(url, query_params, post_params, opts \\ []) do
-    opts = put_in(opts[:headers], headers(opts))
-
-    url
-    |> Nani.Base.post(query_params, post_params, opts)
-    |> parse_response()
+    Nani.Base.post(url, query_params, post_params, json_opts(opts))
   end
 
-  defp headers(opts) do
+  defp json_opts(opts) do
     headers = Keyword.get(opts, :headers, [])
-    @default_headers ++ headers
+    put_in(opts[:headers], @default_headers ++ headers)
   end
-
-  # -----------------------------------------------------------------
-  # parse response
-  # -----------------------------------------------------------------
-
-  defp parse_response({:ok, body}), do: {:ok, Jason.decode!(body)}
-  defp parse_response(response), do: response
 end

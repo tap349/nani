@@ -4,7 +4,7 @@ defmodule Nani.MixProject do
   def project do
     [
       app: :nani,
-      version: "0.1.4",
+      version: "0.2.0",
       elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -27,7 +27,7 @@ defmodule Nani.MixProject do
     [
       maintainers: ["Alexey Terekhov"],
       licenses: ["MIT"],
-      links: %{github: "https://github.com/tap349/nani"},
+      links: %{"GitHub" => "https://github.com/tap349/nani"},
       # > <https://hex.pm/docs/publish>
       # >
       # > When running the command to publish a package, Hex will
@@ -51,6 +51,7 @@ defmodule Nani.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:hayase, "~> 0.1"},
       {:httpoison, "~> 1.5"},
       {:jason, "~> 1.0"}
     ]
