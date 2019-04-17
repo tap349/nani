@@ -20,7 +20,7 @@ defmodule Nani.Base do
     |> process_response()
   end
 
-  @spec post(String.t(), map, map, keyword) :: result_t
+  @spec post(String.t(), map, map | keyword, keyword) :: result_t
   def post(url, query_params, post_params, opts \\ []) do
     url
     |> post_raw(query_params, post_params, opts)
@@ -39,9 +39,8 @@ defmodule Nani.Base do
     |> log_response()
   end
 
-  # binary body is not supported - pass POST params as a map
-  @spec post_raw(String.t(), map, map, keyword) :: raw_result_t
-  def post_raw(url, query_params, %{} = post_params, opts \\ []) do
+  @spec post_raw(String.t(), map, map | keyword, keyword) :: raw_result_t
+  def post_raw(url, query_params, post_params, opts \\ []) do
     headers = request_headers(opts)
     options = request_options(opts)
     body = request_body(post_params, headers)
@@ -81,7 +80,11 @@ defmodule Nani.Base do
         Jason.encode!(post_params)
 
       "application/x-www-form-urlencoded" <> _ ->
-        {:form, Keyword.new(post_params)}
+        if !Keyword.keyword?(post_params) do
+          raise "POST params must be a keyword list"
+        end
+
+        {:form, post_params}
 
       _ ->
         raise "Request Content-Type not supported: #{content_type}"

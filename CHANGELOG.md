@@ -1,3 +1,8 @@
+## v0.2.1
+
+- when using `Nani.Form` it's necessary to pass POST params as a
+  keyword list
+
 ## v0.2.0
 
 breaking changes:
