@@ -11,7 +11,7 @@ defmodule Nani.Form do
   # https://elixirforum.com/t/help-with-httpoison-post/11315
   #
   # POST params must have atom keys since they are converted to keyword list
-  @spec post(String.t(), map, %{optional(atom) => any}, keyword) :: result_t()
+  @spec post(String.t(), map, %{optional(atom) => any}, keyword) :: result_t
   def post(url, query_params, post_params, opts \\ []) do
     Nani.Base.post(url, query_params, post_params, form_opts(opts))
   end
