@@ -33,7 +33,7 @@ defmodule Nani.Base do
     options = request_options(opts)
 
     url
-    |> url_with_query(query_params)
+    |> request_url_with_query(query_params)
     |> URI.encode()
     |> HTTPoison.get(headers, options)
     |> log_response()
@@ -46,13 +46,17 @@ defmodule Nani.Base do
     body = request_body(post_params, headers)
 
     url
-    |> url_with_query(query_params)
+    |> request_url_with_query(query_params)
     |> URI.encode()
     |> HTTPoison.post(body, headers, options)
     |> log_response()
   end
 
-  defp url_with_query(url, query_params) when query_params == %{} do
+  # -----------------------------------------------------------------
+  # request helpers
+  # -----------------------------------------------------------------
+
+  defp request_url_with_query(url, query_params) when query_params == %{} do
     url
   end
 
@@ -60,7 +64,7 @@ defmodule Nani.Base do
   # string and percent-encodes both keys and values
   #
   # URI.decode/1 then percent-decodes this string
-  defp url_with_query(url, query_params) do
+  defp request_url_with_query(url, query_params) do
     query_string =
       query_params
       |> URI.encode_query()
@@ -101,16 +105,8 @@ defmodule Nani.Base do
     Keyword.merge(@default_options, options)
   end
 
-  defp process_response(result) do
-    result
-    |> fmap(&gunzip_response_body/1)
-    |> fmap(&parse_response_body/1)
-    |> bind(&extract_response_body/1)
-    |> process_error()
-  end
-
   # -----------------------------------------------------------------
-  # log_response
+  # response helpers
   # -----------------------------------------------------------------
 
   defp log_response({:ok, %Response{status_code: status_code}} = result)
@@ -126,17 +122,39 @@ defmodule Nani.Base do
     result
   end
 
-  # -----------------------------------------------------------------
-  # gunzip_response_body
-  #
+  defp process_response(result) do
+    result
+    |> check_response_status()
+    |> fmap(&gunzip_response_body/1)
+    |> fmap(&parse_response_body/1)
+    |> fmap(&extract_response_body/1)
+  end
+
+  defp check_response_status({:ok, %Response{status_code: status_code}} = result)
+       when status_code in @success_status_codes do
+    result
+  end
+
+  defp check_response_status({:ok, response}) do
+    %{body: body, status_code: status_code} = response
+
+    case String.trim(body) do
+      "" -> {:error, "#{status_code}"}
+      _ -> {:error, "#{status_code}: #{body}"}
+    end
+  end
+
+  # error can be string, atom, tuple or HTTPoison.Error struct
+  defp check_response_status({:error, error}) do
+    {:error, inspect(error)}
+  end
+
   # https://github.com/edgurgel/httpoison/issues/81
   #
   # gzipped body should be decoded transparently by HTTPoison if
   # "Content-Encoding: gzip" or "Content-Encoding: x-gzip" header
   # is set but this feature is not implemented yet and this header
   # may be missing so check if URL leads to gzipped file manually
-  # -----------------------------------------------------------------
-
   defp gunzip_response_body(%Response{status_code: 200} = response) do
     %{body: body, request: %{url: url}} = response
 
@@ -145,10 +163,6 @@ defmodule Nani.Base do
       false -> response
     end
   end
-
-  # -----------------------------------------------------------------
-  # parse_response_body
-  # -----------------------------------------------------------------
 
   defp parse_response_body(response) do
     %{body: body, headers: headers} = response
@@ -167,32 +181,5 @@ defmodule Nani.Base do
     end
   end
 
-  # -----------------------------------------------------------------
-  # extract_response_body
-  # -----------------------------------------------------------------
-
-  defp extract_response_body(%Response{body: body, status_code: status_code})
-       when status_code in @success_status_codes do
-    {:ok, body}
-  end
-
-  defp extract_response_body(%Response{body: body, status_code: status_code})
-       when body in ["", " "] do
-    {:error, "#{status_code}"}
-  end
-
-  defp extract_response_body(%Response{body: body, status_code: status_code}) do
-    {:error, "#{status_code}: #{body}"}
-  end
-
-  # -----------------------------------------------------------------
-  # process_error
-  # -----------------------------------------------------------------
-
-  # error can be string, atom, tuple or HTTPoison.Error struct
-  defp process_error({:error, error}) do
-    {:error, inspect(error)}
-  end
-
-  defp process_error(result), do: result
+  defp extract_response_body(%Response{body: body}), do: body
 end

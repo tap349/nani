@@ -1,3 +1,7 @@
+## v0.2.2
+
+- fix bugs introduced in v0.2.0 (incorrect processing of errors)
+
 ## v0.2.1
 
 - when using `Nani.Form` it's necessary to pass POST params as a
