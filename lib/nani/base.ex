@@ -33,7 +33,7 @@ defmodule Nani.Base do
     options = request_options(opts)
 
     url
-    |> request_url_with_query(query_params)
+    |> request_url(query_params)
     |> URI.encode()
     |> HTTPoison.get(headers, options)
     |> log_response()
@@ -46,7 +46,7 @@ defmodule Nani.Base do
     body = request_body(post_params, headers)
 
     url
-    |> request_url_with_query(query_params)
+    |> request_url(query_params)
     |> URI.encode()
     |> HTTPoison.post(body, headers, options)
     |> log_response()
@@ -56,7 +56,7 @@ defmodule Nani.Base do
   # request helpers
   # -----------------------------------------------------------------
 
-  defp request_url_with_query(url, query_params) when query_params == %{} do
+  defp request_url(url, query_params) when query_params == %{} do
     url
   end
 
@@ -64,7 +64,7 @@ defmodule Nani.Base do
   # string and percent-encodes both keys and values
   #
   # URI.decode/1 then percent-decodes this string
-  defp request_url_with_query(url, query_params) do
+  defp request_url(url, query_params) do
     query_string =
       query_params
       |> URI.encode_query()
