@@ -4,7 +4,7 @@ defmodule Nani.MixProject do
   def project do
     [
       app: :nani,
-      version: "0.2.2",
+      version: "0.3.0",
       elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -53,7 +53,8 @@ defmodule Nani.MixProject do
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:hayase, "~> 0.1"},
       {:httpoison, "~> 1.5"},
-      {:jason, "~> 1.0"}
+      {:jason, "~> 1.0"},
+      {:nimble_csv, "~> 0.6"}
     ]
   end
 end

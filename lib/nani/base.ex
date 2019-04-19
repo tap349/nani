@@ -1,6 +1,9 @@
 defmodule Nani.Base do
   use Hayase
+
   alias HTTPoison.{Response, Error}
+  alias Nani.Parsers.{CSV, TSV}
+
   require Logger
 
   @success_status_codes [200, 201]
@@ -175,6 +178,12 @@ defmodule Nani.Base do
     case content_type do
       "application/json" <> _ ->
         %{response | body: Jason.decode!(body)}
+
+      "text/csv" <> _ ->
+        %{response | body: CSV.parse!(body)}
+
+      "text/tab-separated-value" <> _ ->
+        %{response | body: TSV.parse!(body)}
 
       _ ->
         response
