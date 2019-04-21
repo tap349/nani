@@ -1,3 +1,8 @@
+## v0.3.1
+
+- parse response body as JSON when content type is `text/javascript` -
+  it's used in Facebook API responses
+
 ## v0.3.0
 
 - parse CSV and TSV response bodies to list of maps automatically (it's

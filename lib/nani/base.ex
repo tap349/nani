@@ -179,6 +179,10 @@ defmodule Nani.Base do
       "application/json" <> _ ->
         %{response | body: Jason.decode!(body)}
 
+      # Facebook API responses
+      "text/javascript" <> _ ->
+        %{response | body: Jason.decode!(body)}
+
       "text/csv" <> _ ->
         %{response | body: CSV.parse!(body)}
 
