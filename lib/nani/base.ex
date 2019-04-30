@@ -167,6 +167,8 @@ defmodule Nani.Base do
     end
   end
 
+  defp gunzip_response_body(response), do: response
+
   defp parse_response_body(response) do
     %{body: body, headers: headers} = response
 

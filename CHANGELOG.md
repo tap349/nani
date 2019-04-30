@@ -1,3 +1,7 @@
+## v0.3.2
+
+- fix bug that can be encountered when status code is successful but not 200
+
 ## v0.3.1
 
 - parse response body as JSON when content type is `text/javascript` -
