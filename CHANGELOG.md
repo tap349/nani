@@ -2,8 +2,8 @@
 
 - remove automatic parsing of CSV and TSV - now they can be parsed manually
   with `Nani.Parsers.CSV` and `Nani.Parsers.TSV` modules
-- add `skip_first_lines` and `skip_last_lines` options to parse functions of
-  `Nani.Parsers.CSV` and `Nani.Parsers.TSV` modules
+- add `skip_first_lines` and `skip_last_lines` options to `parse!` functions
+  of `Nani.Parsers.CSV` and `Nani.Parsers.TSV` modules
 
 ## v0.3.2
 
