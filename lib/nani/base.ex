@@ -1,9 +1,6 @@
 defmodule Nani.Base do
   use Hayase
-
   alias HTTPoison.{Response, Error}
-  alias Nani.Parsers.{CSV, TSV}
-
   require Logger
 
   @success_status_codes [200, 201]
@@ -185,11 +182,9 @@ defmodule Nani.Base do
       "text/javascript" <> _ ->
         %{response | body: Jason.decode!(body)}
 
-      "text/csv" <> _ ->
-        %{response | body: CSV.parse!(body)}
-
-      "text/tab-separated-value" <> _ ->
-        %{response | body: TSV.parse!(body)}
+      # don't parse CSV and TSV bodies automatically
+      # since you cannot guess how many rows to skip
+      # at the beginning or at the end
 
       _ ->
         response
