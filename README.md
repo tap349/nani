@@ -1,8 +1,7 @@
 # Nani
 
-Simple HTTPoison wrapper which provides sensible defaults and some additional
-processing (like parsing JSON, CSV and TSV into maps) - it can be used in all
-kinds of API clients.
+Simple HTTPoison wrapper which provides sensible defaults - it can be used in
+all kinds of API clients.
 
 ## Installation
 
