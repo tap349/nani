@@ -1,3 +1,7 @@
+## v0.5.0
+
+- extract CSV and TSV parsers into separate package - `yuki`.
+
 ## v0.4.0
 
 - remove automatic parsing of CSV and TSV - now they can be parsed manually
