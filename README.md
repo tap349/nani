@@ -1,3 +1,5 @@
+NOTE: It's no longer supported - use Tesla instead.
+
 # Nani
 
 Simple HTTPoison wrapper which provides sensible defaults - it can be used in
