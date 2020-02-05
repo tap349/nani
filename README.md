@@ -1,4 +1,4 @@
-NOTE: It's no longer supported - use Tesla instead.
+NOTE: No longer supported - use Tesla instead.
 
 # Nani
 
